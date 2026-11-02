@@ -49,5 +49,21 @@ class DefaultFirebaseOptions {
     }
   }
 
-  
+  static const FirebaseOptions web = FirebaseOptions(
+    apiKey: 'AIzaSyDEojrlOu6g4vZPwVRjdqLz3Uai78XvNTg',
+    appId: '1:386188785455:web:861b5d4aa1a84db173d3da',
+    messagingSenderId: '386188785455',
+    projectId: 'campus-incident-reportin-f19b5',
+    authDomain: 'campus-incident-reportin-f19b5.firebaseapp.com',
+    storageBucket: 'campus-incident-reportin-f19b5.firebasestorage.app',
+    measurementId: 'G-JFF5VL8RL6',
+  );
+
+  static const FirebaseOptions android = FirebaseOptions(
+    apiKey: 'AIzaSyBASHDehxahUQoR19xCJJZOj2ofpzDC-2s',
+    appId: '1:386188785455:android:f438ece40a8a6bc173d3da',
+    messagingSenderId: '386188785455',
+    projectId: 'campus-incident-reportin-f19b5',
+    storageBucket: 'campus-incident-reportin-f19b5.firebasestorage.app',
+  );
 }
