@@ -1,0 +1,38 @@
+{
+  "flutter": {
+    "platforms": {
+      "android": {
+        "default": {
+          "projectId": "campus-incident-reportin-f19b5",
+          "appId": "1:386188785455:android:f438ece40a8a6bc173d3da",
+          "fileOutput": "android/app/google-services.json"
+        }
+      },
+      "dart": {
+        "lib/firebase_options.dart": {
+          "projectId": "campus-incident-reportin-f19b5",
+          "configurations": {
+            "android": "1:386188785455:android:f438ece40a8a6bc173d3da",
+            "web": "1:386188785455:web:861b5d4aa1a84db173d3da"
+          }
+        }
+      }
+    }
+
+  },
+  "storage": {
+    "rules": "storage.rules"
+  },
+ 
+  "emulators": {
+    "singleProjectMode": true,
+    "storage": {
+      "port": 9199
+    },
+    "ui": {
+      "enabled": true,
+      "port": 4000
+    }
+    
+  }
+}
