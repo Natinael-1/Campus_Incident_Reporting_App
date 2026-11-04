@@ -87,6 +87,7 @@ class AppConstants {
   
   // FIREBASE COLLECTION & STORAGE NAMES
   static const String usersCollection = 'users';
+  static const String authorizedStaffCollection = 'authorized_staff';
   static const String incidentsCollection = 'incidents';
   static const String storageFolder = 'incident_images';
 }
