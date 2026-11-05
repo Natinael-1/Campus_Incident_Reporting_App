@@ -170,7 +170,7 @@ class _RegisterScreenState extends State<RegisterScreen> {
                 // 2. Full Name Field
                 CustomTextField(
                   label: 'Full Name',
-                  hintText: 'e.g., Amina Hassan',
+                  hintText: 'e.g., Natinael Boda',
                   controller: _nameController,
                   validator: Validators.validateName,
                   prefixIcon: Icons.person_outline_rounded,
@@ -180,7 +180,7 @@ class _RegisterScreenState extends State<RegisterScreen> {
                 // 3. Email Address Field
                 CustomTextField(
                   label: 'Campus Email Address',
-                  hintText: 'e.g., a.hassan@alustudent.com',
+                  hintText: 'e.g., ends at @alustudent.com or @alueducation.com',
                   controller: _emailController,
                   validator: Validators.validateEmail,
                   keyboardType: TextInputType.emailAddress,

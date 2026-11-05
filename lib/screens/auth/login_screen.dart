@@ -211,7 +211,7 @@ class _LoginScreenState extends State<LoginScreen> {
                             ),
                             SizedBox(width: 6.0),
                             Text(
-                              'Role-Based Access Info',
+                              'Please login/sign up with your institution email.',
                               style: TextStyle(
                                 fontSize: 12.5,
                                 fontWeight: FontWeight.w700,
@@ -221,14 +221,15 @@ class _LoginScreenState extends State<LoginScreen> {
                           ],
                         ),
                         SizedBox(height: 4.0),
-                        Text(
-                          '• Students: Sign up with your campus email.\n• Authorized Staff: Sign up/in using pre-approved @alueducation.com emails (e.g., facilities@alueducation.com).',
+                        /*Text(
+                          '• Please signup with your instutition email',
+                      
                           style: TextStyle(
                             fontSize: 12.0,
                             color: AppConstants.textSecondary,
                             height: 1.4,
                           ),
-                        ),
+                        ),*/
                       ],
                     ),
                   ),

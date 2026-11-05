@@ -101,7 +101,7 @@ class _StudentHomeScreenState extends State<StudentHomeScreen> {
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: <Widget>[
-            // 1. Top Greeting Header ("Hello, Amina 👋" + Notification + Avatar)
+            // 1. Top Greeting Header ("Hello, user 👋" + Notification + Avatar)
             Row(
               mainAxisAlignment: MainAxisAlignment.spaceBetween,
               children: <Widget>[
@@ -110,7 +110,7 @@ class _StudentHomeScreenState extends State<StudentHomeScreen> {
                     crossAxisAlignment: CrossAxisAlignment.start,
                     children: <Widget>[
                       Text(
-                        'Hello, $firstName 👋',
+                        'Hello, $firstName',
                         style: const TextStyle(
                           fontSize: 22.0,
                           fontWeight: FontWeight.w800,
