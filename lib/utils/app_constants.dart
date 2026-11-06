@@ -78,6 +78,7 @@ class AppConstants {
     'Block A — Ground Floor',
     'Block B — Room 204',
     'Leadership Center — 2nd Floor',
+    'Social Commons',
     'Student Residence',
     'Campus Library / Learning Commons',
     'Cafeteria',

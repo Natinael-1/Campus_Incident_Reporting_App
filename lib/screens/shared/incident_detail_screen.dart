@@ -15,9 +15,8 @@ class IncidentDetailScreen extends StatelessWidget {
     required this.initialIncident,
   });
 
-  // ==========================================
+  
   // DATE & TIME FORMATTING HELPERS
-  // ==========================================
   static const List<String> _monthNames = <String>[
     'Jan',
     'Feb',
@@ -33,7 +32,7 @@ class IncidentDetailScreen extends StatelessWidget {
     'Dec',
   ];
 
-  /// Formats DateTime as "Oct 15, 2026 at 10:24 AM" for the Submitted metadata row
+  //Formats DateTime as "Oct 15, 2026 at 10:24 AM" for the Submitted metadata row
   String _formatFullDateTime(DateTime dt) {
     final String month = _monthNames[dt.month - 1];
     final int hour12 = dt.hour % 12 == 0 ? 12 : dt.hour % 12;
@@ -42,7 +41,7 @@ class IncidentDetailScreen extends StatelessWidget {
     return '$month ${dt.day}, ${dt.year} at $hour12:$minute $period';
   }
 
-  /// Formats DateTime as "Oct 15, 10:24 AM" for the Status Timeline nodes
+  //Formats DateTime as "Oct 15, 10:24 AM" for the Status Timeline nodes
   String _formatShortDateTime(DateTime? dt) {
     if (dt == null) return 'Pending';
     final String month = _monthNames[dt.month - 1];
@@ -52,9 +51,8 @@ class IncidentDetailScreen extends StatelessWidget {
     return '$month ${dt.day}, $hour12:$minute $period';
   }
 
-  // ==========================================
+  
   // STAFF STATUS UPDATE HANDLER
-  // ==========================================
   Future<void> _handleStatusUpdate(
     BuildContext context,
     IncidentModel incident,
@@ -94,9 +92,8 @@ class IncidentDetailScreen extends StatelessWidget {
     }
   }
 
-  // ==========================================
+  
   // DELETE INCIDENT HANDLER (OPTIONAL ACTION)
-  // ==========================================
   Future<void> _confirmDelete(
     BuildContext context,
     IncidentModel incident,
@@ -311,7 +308,7 @@ class IncidentDetailScreen extends StatelessWidget {
     );
   }
 
-  /// 1. Builds the top summary row matching the Canvas sample (Thumbnail + Title + Location + Badge)
+  //1. Builds the top summary row matching the Canvas sample (Thumbnail + Title + Location + Badge)
   Widget _buildHeaderCard(IncidentModel incident) {
     return Container(
       padding: const EdgeInsets.all(14.0),
@@ -472,7 +469,7 @@ class IncidentDetailScreen extends StatelessWidget {
     );
   }
 
-  /// 3. Builds the 3-Step Horizontal Status Timeline matching the Canvas UI
+  //3. Builds the 3-Step Horizontal Status Timeline matching the Canvas UI
   Widget _buildStatusTimeline(IncidentModel incident) {
     final bool step1Done = true; // Always submitted
     final bool step2Active = incident.isInProgress || incident.isResolved;
@@ -743,7 +740,7 @@ class IncidentDetailScreen extends StatelessWidget {
     );
   }
 
-  /// 5. Builds the large Attached Photo preview (or a clean empty state if no photo was attached)
+  //5. Builds the large Attached Photo preview (or a clean empty state if no photo was attached)
   Widget _buildAttachedPhoto(IncidentModel incident) {
     if (incident.hasPhoto && incident.imageUrl != null) {
       return ClipRRect(

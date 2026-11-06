@@ -211,7 +211,7 @@ class _LoginScreenState extends State<LoginScreen> {
                             ),
                             SizedBox(width: 6.0),
                             Text(
-                              'Please login/sign up with your institution email.',
+                              'Please login/sign up with your ALU email.',
                               style: TextStyle(
                                 fontSize: 12.5,
                                 fontWeight: FontWeight.w700,
