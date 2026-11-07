@@ -125,7 +125,7 @@ Upon first launch, `AuthService.seedAuthorizedStaff()` automatically seeds the `
 * **Demo Video (7–10 Minutes):** `[Video Link Here]`
 * **Technical Report (Google Doc / PDF):** `[Report Link Here]`
 
-## 👨Author
+## Author
 
 **Natinael Boda Borana**  
 BSc. (Hons) in Software Engineering  
