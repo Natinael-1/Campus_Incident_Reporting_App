@@ -1,6 +1,6 @@
 # Campus Incident Reporting Application
 
-A role-based, real-time mobile platform built with **Flutter** and **Google Firebase** (`Firebase Auth`, `Cloud Firestore`, and `Firebase Storage`) that enables university students and campus staff to report, track, and resolve campus infrastructure and safety incidents in real time.
+A role-based platform built with **Flutter** and **Google Firebase** (`Firebase Auth`, `Cloud Firestore`, and `Firebase Storage`) that enables ALU students and campus staff to report, track, and resolve campus infrastructure and safety incidents in real time.
 
 ## Project Overview
 
@@ -28,12 +28,12 @@ The **Campus Incident Reporting Application** digitizes the entire campus mainte
 
 ## System Architecture & Tech Stack
 
-The application follows a modular **Four-Layer Architecture** to enforce strict separation of concerns:
+The application follows a modular **Four Parts Architecture** to enforce strict separation of concerns:
 
-1. **Presentation Layer (`lib/screens/` & `lib/widgets/`):** Reactive Light Blue & White Material 3 UI screens and reusable stateless widgets.
-2. **State Management Layer (`lib/providers/`):** `AuthProvider` and `IncidentProvider` (`ChangeNotifier` + `Provider`) managing live streams, in-memory filtering, and loading states.
-3. **Service Layer (`lib/services/`):** `AuthService`, `FirestoreService`, and `StorageService` encapsulating all Firebase SDK operations and error handling.
-4. **Data Model & Utility Layer (`lib/models/` & `lib/utils/`):** Strongly typed models (`UserModel`, `IncidentModel`) with `toMap()`/`fromMap()` serialization, regex validators, and design constants.
+1. **Presentation(UI) (`lib/screens/` & `lib/widgets/`):** Reactive Light Blue & White Material 3 UI screens and reusable stateless widgets.
+2. **State Management (`lib/providers/`):** `AuthProvider` and `IncidentProvider` (`ChangeNotifier` + `Provider`) managing live streams, in-memory filtering, and loading states.
+3. **Service (`lib/services/`):** `AuthService`, `FirestoreService`, and `StorageService` encapsulating all Firebase SDK operations and error handling.
+4. **Data Model & Utility (`lib/models/` & `lib/utils/`):** Strongly typed models (`UserModel`, `IncidentModel`) with `toMap()`/`fromMap()` serialization, regex validators, and design constants.
 
 | Category | Technology | Version | Purpose |
 | :--- | :--- | :--- | :--- |
@@ -116,9 +116,13 @@ Upon first launch, `AuthService.seedAuthorizedStaff()` automatically seeds the `
 
 | Role | Email Address to Register / Sign In | Assigned Access Level |
 | :--- | :--- | :--- |
-| **Student Account** | Any standard email (e.g., `a.hassan@alustudent.com`) | Routes to **Student Portal** (`role: "student"`). Cannot alter resolution statuses. |
-| **Authorized Staff** | `facilities@alueducation.com`, `admin.staff@alueducation.com`, `it.support@alueducation.com`, `security@alueducation.com` | Verified against `authorized_staff`. Routes to **Staff Operations Portal** (`role: "staff"`). |
-| **Unauthorized Staff** | Any unlisted `@alueducation.com` email (e.g., `fake@alueducation.com`) | **Blocked** with an Access Denied error message to prevent privilege escalation. |
+| **Student Account** | Any standard email (e.g., `natinale@alustudent.com`) | Routes to **Student Portal** (`role: "student"`). Cannot alter resolution statuses. |
+| **Authorized Staff** | `facilities@alueducation.com`, `security@alueducation.com` | Verified against `authorized_staff`. Routes to **Staff Operations Portal** (`role: "staff"`). |
+| **Unauthorized Staff** | Any unlisted `@alueducation.com` email (e.g., `fake@alueducation.com`) | **Blocked** with an Access Denied error message to prevent privilege escalation. |  
+
+## Note  
+Credentials(Passwords) for the test account are provided in the COMMENT SECTION of Canvas.
+
 
 ## Author
 
