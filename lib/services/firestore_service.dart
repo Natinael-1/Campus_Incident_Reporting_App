@@ -128,6 +128,33 @@ class FirestoreService {
     }
   }
 
+  Future<void> updateIncidentDetails({
+    required String incidentId,
+    required String title,
+    required String description,
+    required String category,
+    required String location,
+    required String? imageUrl,
+  }) async {
+    try {
+      await _firestore
+          .collection(AppConstants.incidentsCollection)
+          .doc(incidentId)
+          .update(<String, dynamic>{
+        'title': title.trim(),
+        'description': description.trim(),
+        'category': category.trim(),
+        'location': location.trim(),
+        'imageUrl': imageUrl,
+        'updatedAt': Timestamp.fromDate(DateTime.now()),
+      });
+    } on FirebaseException catch (e) {
+      throw Exception('Failed to update incident (${e.code}): ${e.message}');
+    } catch (e) {
+      throw Exception('Error updating incident: ${e.toString()}');
+    }
+  }
+
   //DELETE INCIDENT: Removes an incident document from Cloud Firestore
   Future<void> deleteIncident(String incidentId) async {
     try {

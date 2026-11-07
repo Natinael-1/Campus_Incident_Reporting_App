@@ -6,6 +6,7 @@ import '../../providers/auth_provider.dart';
 import '../../providers/incident_provider.dart';
 import '../../utils/app_constants.dart';
 import '../../widgets/status_badge.dart';
+import '../student/create_incident_screen.dart';
 
 class IncidentDetailScreen extends StatelessWidget {
   final IncidentModel initialIncident;
@@ -32,7 +33,6 @@ class IncidentDetailScreen extends StatelessWidget {
     'Dec',
   ];
 
-  //Formats DateTime as "Oct 15, 2026 at 10:24 AM" for the Submitted metadata row
   String _formatFullDateTime(DateTime dt) {
     final String month = _monthNames[dt.month - 1];
     final int hour12 = dt.hour % 12 == 0 ? 12 : dt.hour % 12;
@@ -41,7 +41,6 @@ class IncidentDetailScreen extends StatelessWidget {
     return '$month ${dt.day}, ${dt.year} at $hour12:$minute $period';
   }
 
-  //Formats DateTime as "Oct 15, 10:24 AM" for the Status Timeline nodes
   String _formatShortDateTime(DateTime? dt) {
     if (dt == null) return 'Pending';
     final String month = _monthNames[dt.month - 1];
@@ -52,7 +51,21 @@ class IncidentDetailScreen extends StatelessWidget {
   }
 
   
+  // NAVIGATION TO EDIT SCREEN (UPDATE WORKFLOW)
+  
+  void _openEditIncidentScreen(BuildContext context, IncidentModel incident) {
+    Navigator.of(context).push(
+      MaterialPageRoute<void>(
+        builder: (BuildContext context) => CreateIncidentScreen(
+          existingIncident: incident,
+        ),
+      ),
+    );
+  }
+
+  
   // STAFF STATUS UPDATE HANDLER
+  
   Future<void> _handleStatusUpdate(
     BuildContext context,
     IncidentModel incident,
@@ -93,7 +106,8 @@ class IncidentDetailScreen extends StatelessWidget {
   }
 
   
-  // DELETE INCIDENT HANDLER (OPTIONAL ACTION)
+  // DELETE INCIDENT HANDLER (DELETE WORKFLOW)
+  
   Future<void> _confirmDelete(
     BuildContext context,
     IncidentModel incident,
@@ -114,7 +128,7 @@ class IncidentDetailScreen extends StatelessWidget {
             ),
           ),
           content: const Text(
-            'Are you sure you want to permanently remove this incident report?',
+            'Are you sure you want to permanently remove this incident report from Firestore?',
             style: TextStyle(color: AppConstants.textSecondary),
           ),
           actions: <Widget>[
@@ -149,11 +163,20 @@ class IncidentDetailScreen extends StatelessWidget {
     if (success) {
       ScaffoldMessenger.of(context).showSnackBar(
         const SnackBar(
-          content: Text('Incident deleted.'),
+          content: Text('Incident report deleted successfully.'),
           backgroundColor: AppConstants.textDark,
         ),
       );
       Navigator.of(context).pop();
+    } else {
+      final String error =
+          incidentProvider.errorMessage ?? 'Failed to delete incident.';
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: Text(error),
+          backgroundColor: Colors.redAccent,
+        ),
+      );
     }
   }
 
@@ -162,7 +185,7 @@ class IncidentDetailScreen extends StatelessWidget {
     final IncidentProvider incidentProvider = context.watch<IncidentProvider>();
     final AuthProvider authProvider = context.watch<AuthProvider>();
 
-    // Read the latest version from provider cache so status updates reflect immediately
+    // Read the latest version from provider cache so edits & status changes reflect immediately
     final IncidentModel incident =
         incidentProvider.getIncidentByIdFromCache(initialIncident.id) ??
             initialIncident;
@@ -170,8 +193,9 @@ class IncidentDetailScreen extends StatelessWidget {
     final bool isStaff = authProvider.isStaff;
     final bool isReporter =
         authProvider.currentUser?.uid == incident.reportedByUid;
-    final bool canDelete =
-        isStaff || (isReporter && incident.isSubmitted);
+
+    // Students can edit/delete their own reports while status is 'Submitted'; Staff can always edit/delete
+    final bool canModify = isStaff || (isReporter && incident.isSubmitted);
 
     return Scaffold(
       backgroundColor: AppConstants.scaffoldBackground,
@@ -189,7 +213,7 @@ class IncidentDetailScreen extends StatelessWidget {
           ),
         ),
         actions: <Widget>[
-          if (canDelete)
+          if (canModify)
             PopupMenuButton<String>(
               icon: const Icon(
                 Icons.more_vert_rounded,
@@ -197,11 +221,30 @@ class IncidentDetailScreen extends StatelessWidget {
               ),
               color: AppConstants.cardWhite,
               onSelected: (String value) {
-                if (value == 'delete') {
+                if (value == 'edit') {
+                  _openEditIncidentScreen(context, incident);
+                } else if (value == 'delete') {
                   _confirmDelete(context, incident);
                 }
               },
               itemBuilder: (BuildContext context) => <PopupMenuEntry<String>>[
+                const PopupMenuItem<String>(
+                  value: 'edit',
+                  child: Row(
+                    children: <Widget>[
+                      Icon(
+                        Icons.edit_outlined,
+                        color: AppConstants.primaryBlue,
+                        size: 20.0,
+                      ),
+                      SizedBox(width: 8.0),
+                      Text(
+                        'Edit Report',
+                        style: TextStyle(color: AppConstants.textDark),
+                      ),
+                    ],
+                  ),
+                ),
                 const PopupMenuItem<String>(
                   value: 'delete',
                   child: Row(
@@ -235,9 +278,20 @@ class IncidentDetailScreen extends StatelessWidget {
 
               // 2. Submission Date & Reporter Info Card
               _buildMetadataSection(incident),
-              const SizedBox(height: 22.0),
+              const SizedBox(height: 16.0),
 
-              // 3. Status Timeline (Submitted -> In Progress -> Resolved)
+              // 3. Visible Edit & Delete Action Row (For Reporter or Staff)
+              if (canModify) ...<Widget>[
+                _buildModifyActionRow(
+                  context,
+                  incident,
+                  incidentProvider.isSubmitting,
+                ),
+                const SizedBox(height: 22.0),
+              ] else
+                const SizedBox(height: 6.0),
+
+              // 4. Status Timeline (Submitted -> In Progress -> Resolved)
               const Text(
                 'Status Timeline',
                 style: TextStyle(
@@ -250,7 +304,7 @@ class IncidentDetailScreen extends StatelessWidget {
               _buildStatusTimeline(incident),
               const SizedBox(height: 22.0),
 
-              // 4. Staff-Only Access Control Card (Only visible to authorized staff)
+              // 5. Staff-Only Access Control Card (Only visible to authorized staff)
               if (isStaff) ...<Widget>[
                 _buildStaffActionCard(
                   context,
@@ -260,7 +314,7 @@ class IncidentDetailScreen extends StatelessWidget {
                 const SizedBox(height: 22.0),
               ],
 
-              // 5. Full Description Section
+              // 6. Full Description Section
               const Text(
                 'Description',
                 style: TextStyle(
@@ -289,7 +343,7 @@ class IncidentDetailScreen extends StatelessWidget {
               ),
               const SizedBox(height: 22.0),
 
-              // 6. Attached Photo Section
+              // 7. Attached Photo Section
               const Text(
                 'Attached Photo',
                 style: TextStyle(
@@ -308,7 +362,66 @@ class IncidentDetailScreen extends StatelessWidget {
     );
   }
 
-  //1. Builds the top summary row matching the Canvas sample (Thumbnail + Title + Location + Badge)
+  /// Visible Edit & Delete buttons so CRUD operations are easy to access and demo
+  Widget _buildModifyActionRow(
+    BuildContext context,
+    IncidentModel incident,
+    bool isSubmitting,
+  ) {
+    return Row(
+      children: <Widget>[
+        Expanded(
+          child: OutlinedButton.icon(
+            onPressed: isSubmitting
+                ? null
+                : () => _openEditIncidentScreen(context, incident),
+            style: OutlinedButton.styleFrom(
+              foregroundColor: AppConstants.primaryBlue,
+              backgroundColor: AppConstants.cardWhite,
+              side: const BorderSide(color: AppConstants.primaryBlue),
+              padding: const EdgeInsets.symmetric(vertical: 12.0),
+              shape: RoundedRectangleBorder(
+                borderRadius: BorderRadius.circular(12.0),
+              ),
+            ),
+            icon: const Icon(Icons.edit_outlined, size: 18.0),
+            label: const Text(
+              'Edit Report',
+              style: TextStyle(
+                fontSize: 13.5,
+                fontWeight: FontWeight.w700,
+              ),
+            ),
+          ),
+        ),
+        const SizedBox(width: 12.0),
+        Expanded(
+          child: OutlinedButton.icon(
+            onPressed:
+                isSubmitting ? null : () => _confirmDelete(context, incident),
+            style: OutlinedButton.styleFrom(
+              foregroundColor: Colors.redAccent,
+              backgroundColor: AppConstants.cardWhite,
+              side: const BorderSide(color: Colors.redAccent),
+              padding: const EdgeInsets.symmetric(vertical: 12.0),
+              shape: RoundedRectangleBorder(
+                borderRadius: BorderRadius.circular(12.0),
+              ),
+            ),
+            icon: const Icon(Icons.delete_outline_rounded, size: 18.0),
+            label: const Text(
+              'Delete Report',
+              style: TextStyle(
+                fontSize: 13.5,
+                fontWeight: FontWeight.w700,
+              ),
+            ),
+          ),
+        ),
+      ],
+    );
+  }
+
   Widget _buildHeaderCard(IncidentModel incident) {
     return Container(
       padding: const EdgeInsets.all(14.0),
@@ -390,7 +503,6 @@ class IncidentDetailScreen extends StatelessWidget {
     );
   }
 
-  /// 2. Builds the Submitted timestamp, Reporter Name, and Staff Updater info
   Widget _buildMetadataSection(IncidentModel incident) {
     return Container(
       padding: const EdgeInsets.symmetric(horizontal: 14.0, vertical: 12.0),
@@ -469,9 +581,8 @@ class IncidentDetailScreen extends StatelessWidget {
     );
   }
 
-  //3. Builds the 3-Step Horizontal Status Timeline matching the Canvas UI
   Widget _buildStatusTimeline(IncidentModel incident) {
-    final bool step1Done = true; // Always submitted
+    const bool step1Done = true;
     final bool step2Active = incident.isInProgress || incident.isResolved;
     final bool step3Active = incident.isResolved;
 
@@ -484,7 +595,6 @@ class IncidentDetailScreen extends StatelessWidget {
       ),
       child: Column(
         children: <Widget>[
-          // Circles and connecting horizontal lines
           Row(
             children: <Widget>[
               _buildTimelineCircle(
@@ -522,8 +632,6 @@ class IncidentDetailScreen extends StatelessWidget {
             ],
           ),
           const SizedBox(height: 10.0),
-
-          // Step Titles & Timestamps
           Row(
             crossAxisAlignment: CrossAxisAlignment.start,
             children: <Widget>[
@@ -638,7 +746,6 @@ class IncidentDetailScreen extends StatelessWidget {
     );
   }
 
-  /// 4. Staff-Only Status Control Card (Hidden for students)
   Widget _buildStaffActionCard(
     BuildContext context,
     IncidentModel incident,
@@ -740,7 +847,6 @@ class IncidentDetailScreen extends StatelessWidget {
     );
   }
 
-  //5. Builds the large Attached Photo preview (or a clean empty state if no photo was attached)
   Widget _buildAttachedPhoto(IncidentModel incident) {
     if (incident.hasPhoto && incident.imageUrl != null) {
       return ClipRRect(

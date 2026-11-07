@@ -2,6 +2,7 @@ import 'dart:io';
 import 'package:flutter/material.dart';
 import 'package:image_picker/image_picker.dart';
 import 'package:provider/provider.dart';
+import '../../models/incident_model.dart';
 import '../../models/user_model.dart';
 import '../../providers/auth_provider.dart';
 import '../../providers/incident_provider.dart';
@@ -11,10 +12,12 @@ import '../../widgets/custom_text_field.dart';
 
 class CreateIncidentScreen extends StatefulWidget {
   final VoidCallback? onReportSubmitted;
+  final IncidentModel? existingIncident; // Null = Create Mode, Non-Null = Edit Mode
 
   const CreateIncidentScreen({
     super.key,
     this.onReportSubmitted,
+    this.existingIncident,
   });
 
   @override
@@ -24,13 +27,40 @@ class CreateIncidentScreen extends StatefulWidget {
 class _CreateIncidentScreenState extends State<CreateIncidentScreen> {
   final GlobalKey<FormState> _formKey = GlobalKey<FormState>();
 
-  final TextEditingController _titleController = TextEditingController();
-  final TextEditingController _descriptionController = TextEditingController();
+  late final TextEditingController _titleController;
+  late final TextEditingController _descriptionController;
   final ImagePicker _imagePicker = ImagePicker();
 
-  String _selectedCategory = AppConstants.categories.first; // 'Facilities'
-  String _selectedLocation = AppConstants.campusLocations[1]; // 'Block B — Room 204'
-  File? _selectedImage;
+  late String _selectedCategory;
+  late String _selectedLocation;
+  File? _selectedImage; // Newly picked local file from Camera/Gallery
+  String? _existingImageUrl; // Existing photo URL already stored in Firebase
+  bool _removeExistingImage = false;
+
+  bool get _isEditMode => widget.existingIncident != null;
+
+  @override
+  void initState() {
+    super.initState();
+    final IncidentModel? existing = widget.existingIncident;
+
+    _titleController = TextEditingController(text: existing?.title ?? '');
+    _descriptionController = TextEditingController(
+      text: existing?.description ?? '',
+    );
+
+    _selectedCategory = (existing != null &&
+            AppConstants.categories.contains(existing.category))
+        ? existing.category
+        : AppConstants.categories.first;
+
+    _selectedLocation = (existing != null &&
+            AppConstants.campusLocations.contains(existing.location))
+        ? existing.location
+        : AppConstants.campusLocations[1];
+
+    _existingImageUrl = existing?.imageUrl;
+  }
 
   @override
   void dispose() {
@@ -39,7 +69,7 @@ class _CreateIncidentScreenState extends State<CreateIncidentScreen> {
     super.dispose();
   }
 
-  /// Opens a bottom sheet letting the student pick a photo from Camera or Gallery
+  /// Opens a bottom sheet letting the user pick a photo from Camera or Gallery
   Future<void> _showImageSourceSheet() async {
     await showModalBottomSheet<void>(
       context: context,
@@ -137,6 +167,7 @@ class _CreateIncidentScreenState extends State<CreateIncidentScreen> {
       if (pickedFile != null && mounted) {
         setState(() {
           _selectedImage = File(pickedFile.path);
+          _removeExistingImage = false;
         });
       }
     } catch (e) {
@@ -164,49 +195,72 @@ class _CreateIncidentScreenState extends State<CreateIncidentScreen> {
     if (currentUser == null) {
       ScaffoldMessenger.of(context).showSnackBar(
         const SnackBar(
-          content: Text('You must be signed in to submit an incident report.'),
+          content: Text('You must be signed in to continue.'),
           backgroundColor: Colors.redAccent,
         ),
       );
       return;
     }
 
-    final bool success = await incidentProvider.submitIncident(
-      title: _titleController.text,
-      description: _descriptionController.text,
-      category: _selectedCategory,
-      location: _selectedLocation,
-      reportedByUid: currentUser.uid,
-      reportedByName: currentUser.name,
-      imageFile: _selectedImage,
-    );
+    bool success = false;
+
+    if (_isEditMode) {
+      // UPDATE EXISTING INCIDENT
+      success = await incidentProvider.editIncident(
+        existingIncident: widget.existingIncident!,
+        title: _titleController.text,
+        description: _descriptionController.text,
+        category: _selectedCategory,
+        location: _selectedLocation,
+        newImageFile: _selectedImage,
+        removeExistingImage: _removeExistingImage,
+      );
+    } else {
+      // CREATE NEW INCIDENT
+      success = await incidentProvider.submitIncident(
+        title: _titleController.text,
+        description: _descriptionController.text,
+        category: _selectedCategory,
+        location: _selectedLocation,
+        reportedByUid: currentUser.uid,
+        reportedByName: currentUser.name,
+        imageFile: _selectedImage,
+      );
+    }
 
     if (!mounted) return;
 
     if (success) {
-      // Clear form fields after successful submission
-      _titleController.clear();
-      _descriptionController.clear();
-      setState(() {
-        _selectedImage = null;
-        _selectedCategory = AppConstants.categories.first;
-      });
-
       ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(
-          content: Text('Incident report submitted successfully!'),
+        SnackBar(
+          content: Text(
+            _isEditMode
+                ? 'Incident report updated successfully!'
+                : 'Incident report submitted successfully!',
+          ),
           backgroundColor: AppConstants.resolvedText,
         ),
       );
 
-      if (widget.onReportSubmitted != null) {
-        widget.onReportSubmitted!();
-      } else if (Navigator.of(context).canPop()) {
+      if (_isEditMode) {
         Navigator.of(context).pop();
+      } else {
+        _titleController.clear();
+        _descriptionController.clear();
+        setState(() {
+          _selectedImage = null;
+          _selectedCategory = AppConstants.categories.first;
+        });
+
+        if (widget.onReportSubmitted != null) {
+          widget.onReportSubmitted!();
+        } else if (Navigator.of(context).canPop()) {
+          Navigator.of(context).pop();
+        }
       }
     } else {
       final String error = incidentProvider.errorMessage ??
-          'Failed to submit report. Please try again.';
+          'Failed to save report. Please try again.';
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(
           content: Text(error),
@@ -227,9 +281,9 @@ class _CreateIncidentScreenState extends State<CreateIncidentScreen> {
         elevation: 0,
         centerTitle: true,
         iconTheme: const IconThemeData(color: AppConstants.textDark),
-        title: const Text(
-          'Report an Incident',
-          style: TextStyle(
+        title: Text(
+          _isEditMode ? 'Edit Incident Report' : 'Report an Incident',
+          style: const TextStyle(
             color: AppConstants.textDark,
             fontSize: 18.0,
             fontWeight: FontWeight.w700,
@@ -244,7 +298,7 @@ class _CreateIncidentScreenState extends State<CreateIncidentScreen> {
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: <Widget>[
-                // 1. Category Selector Grid (5 Categories from Canvas UI)
+                // 1. Category Selector Grid
                 const Text(
                   'Select a category',
                   style: TextStyle(
@@ -372,7 +426,7 @@ class _CreateIncidentScreenState extends State<CreateIncidentScreen> {
                 _buildPhotoPickerBox(),
                 const SizedBox(height: 28.0),
 
-                // 6. Submit Report Button
+                // 6. Submit / Save Changes Button
                 SizedBox(
                   width: double.infinity,
                   height: 52.0,
@@ -397,9 +451,9 @@ class _CreateIncidentScreenState extends State<CreateIncidentScreen> {
                               color: AppConstants.cardWhite,
                             ),
                           )
-                        : const Text(
-                            'Submit Report',
-                            style: TextStyle(
+                        : Text(
+                            _isEditMode ? 'Save Changes' : 'Submit Report',
+                            style: const TextStyle(
                               fontSize: 15.5,
                               fontWeight: FontWeight.w700,
                             ),
@@ -415,14 +469,12 @@ class _CreateIncidentScreenState extends State<CreateIncidentScreen> {
     );
   }
 
-  /// Builds the 5 category icon buttons (3 on top row, 2 on bottom row) matching the sample UI
   Widget _buildCategoryGrid() {
     return Wrap(
       spacing: 10.0,
       runSpacing: 10.0,
       children: AppConstants.categories.map((String category) {
         final bool isSelected = _selectedCategory == category;
-        // Calculate width so 3 tiles fit per row cleanly
         final double tileWidth =
             (MediaQuery.of(context).size.width - 40.0 - 20.0) / 3;
 
@@ -476,8 +528,9 @@ class _CreateIncidentScreenState extends State<CreateIncidentScreen> {
     );
   }
 
-  /// Builds the "Tap to add photos" box or displays the selected image preview with a remove button
+  /// Displays newly picked File, existing Firebase URL, or the "Tap to add photos" box
   Widget _buildPhotoPickerBox() {
+    // 1. Newly picked local file from Camera/Gallery
     if (_selectedImage != null) {
       return Stack(
         children: <Widget>[
@@ -490,33 +543,59 @@ class _CreateIncidentScreenState extends State<CreateIncidentScreen> {
               fit: BoxFit.cover,
             ),
           ),
-          Positioned(
-            top: 8.0,
-            right: 8.0,
-            child: GestureDetector(
-              onTap: () {
-                setState(() {
-                  _selectedImage = null;
-                });
-              },
-              child: Container(
-                padding: const EdgeInsets.all(6.0),
-                decoration: const BoxDecoration(
-                  color: Colors.black54,
-                  shape: BoxShape.circle,
-                ),
-                child: const Icon(
-                  Icons.close_rounded,
-                  color: Colors.white,
-                  size: 18.0,
-                ),
-              ),
-            ),
+          _buildPhotoOverlayActions(
+            onReplace: _showImageSourceSheet,
+            onRemove: () {
+              setState(() {
+                _selectedImage = null;
+                if (_existingImageUrl != null) {
+                  _removeExistingImage = true;
+                }
+              });
+            },
           ),
         ],
       );
     }
 
+    // 2. Existing photo stored in Firebase (when editing and not yet removed)
+    if (_existingImageUrl != null &&
+        _existingImageUrl!.trim().isNotEmpty &&
+        !_removeExistingImage) {
+      return Stack(
+        children: <Widget>[
+          ClipRRect(
+            borderRadius: BorderRadius.circular(14.0),
+            child: Image.network(
+              _existingImageUrl!,
+              width: double.infinity,
+              height: 180.0,
+              fit: BoxFit.cover,
+              errorBuilder: (_, __, ___) => Container(
+                width: double.infinity,
+                height: 180.0,
+                color: AppConstants.lightBlueSurface,
+                child: const Icon(
+                  Icons.broken_image_outlined,
+                  color: AppConstants.primaryBlue,
+                  size: 36.0,
+                ),
+              ),
+            ),
+          ),
+          _buildPhotoOverlayActions(
+            onReplace: _showImageSourceSheet,
+            onRemove: () {
+              setState(() {
+                _removeExistingImage = true;
+              });
+            },
+          ),
+        ],
+      );
+    }
+
+    // 3. Empty state ("Tap to add photos")
     return GestureDetector(
       onTap: _showImageSourceSheet,
       child: Container(
@@ -546,6 +625,67 @@ class _CreateIncidentScreenState extends State<CreateIncidentScreen> {
             ),
           ],
         ),
+      ),
+    );
+  }
+
+  Widget _buildPhotoOverlayActions({
+    required VoidCallback onReplace,
+    required VoidCallback onRemove,
+  }) {
+    return Positioned(
+      top: 8.0,
+      right: 8.0,
+      child: Row(
+        children: <Widget>[
+          GestureDetector(
+            onTap: onReplace,
+            child: Container(
+              padding: const EdgeInsets.symmetric(
+                horizontal: 10.0,
+                vertical: 6.0,
+              ),
+              decoration: BoxDecoration(
+                color: Colors.black54,
+                borderRadius: BorderRadius.circular(16.0),
+              ),
+              child: const Row(
+                children: <Widget>[
+                  Icon(
+                    Icons.edit_outlined,
+                    color: Colors.white,
+                    size: 15.0,
+                  ),
+                  SizedBox(width: 4.0),
+                  Text(
+                    'Change',
+                    style: TextStyle(
+                      color: Colors.white,
+                      fontSize: 11.5,
+                      fontWeight: FontWeight.w600,
+                    ),
+                  ),
+                ],
+              ),
+            ),
+          ),
+          const SizedBox(width: 8.0),
+          GestureDetector(
+            onTap: onRemove,
+            child: Container(
+              padding: const EdgeInsets.all(6.0),
+              decoration: const BoxDecoration(
+                color: Colors.black54,
+                shape: BoxShape.circle,
+              ),
+              child: const Icon(
+                Icons.close_rounded,
+                color: Colors.white,
+                size: 18.0,
+              ),
+            ),
+          ),
+        ],
       ),
     );
   }

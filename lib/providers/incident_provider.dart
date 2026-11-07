@@ -295,10 +295,61 @@ class IncidentProvider extends ChangeNotifier {
     }
   }
 
+  Future<bool> editIncident({
+      required IncidentModel existingIncident,
+      required String title,
+      required String description,
+      required String category,
+      required String location,
+      File? newImageFile,
+      bool removeExistingImage = false,
+    }) async {
+      _isSubmitting = true;
+      _errorMessage = null;
+      notifyListeners();
+
+      try {
+        String? finalImageUrl = existingIncident.imageUrl;
+
+        // Case 1: User picked a brand-new photo from Camera/Gallery -> upload & replace
+        if (newImageFile != null) {
+          finalImageUrl = await _storageService.uploadIncidentImage(
+            imageFile: newImageFile,
+            incidentId: existingIncident.id,
+          );
+        }
+        // Case 2: User tapped the 'X' button to remove the existing photo without picking a new one
+        else if (removeExistingImage && existingIncident.imageUrl != null) {
+          try {
+            await _storageService.deleteIncidentImage(existingIncident.imageUrl!);
+          } catch (_) {
+            // Ignore storage deletion error if file was already missing
+          }
+          finalImageUrl = null;
+        }
+
+        // Update the document fields in Cloud Firestore
+        await _firestoreService.updateIncidentDetails(
+          incidentId: existingIncident.id,
+          title: title,
+          description: description,
+          category: category,
+          location: location,
+          imageUrl: finalImageUrl,
+        );
+
+        _isSubmitting = false;
+        notifyListeners();
+        return true;
+      } catch (e) {
+        _errorMessage = e.toString().replaceFirst('Exception: ', '');
+        _isSubmitting = false;
+        notifyListeners();
+        return false;
+      }
+  }
   
   // 8. DELETE INCIDENT
-  
-
   Future<bool> deleteIncident(IncidentModel incident) async {
     _isSubmitting = true;
     _errorMessage = null;
