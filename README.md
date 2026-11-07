@@ -120,11 +120,6 @@ Upon first launch, `AuthService.seedAuthorizedStaff()` automatically seeds the `
 | **Authorized Staff** | `facilities@alueducation.com`, `admin.staff@alueducation.com`, `it.support@alueducation.com`, `security@alueducation.com` | Verified against `authorized_staff`. Routes to **Staff Operations Portal** (`role: "staff"`). |
 | **Unauthorized Staff** | Any unlisted `@alueducation.com` email (e.g., `fake@alueducation.com`) | **Blocked** with an Access Denied error message to prevent privilege escalation. |
 
-## Demo Video & Technical Documentation
-
-* **Demo Video (7–10 Minutes):** `[Video Link Here]`
-* **Technical Report (Google Doc / PDF):** `[Report Link Here]`
-
 ## Author
 
 **Natinael Boda Borana**  
