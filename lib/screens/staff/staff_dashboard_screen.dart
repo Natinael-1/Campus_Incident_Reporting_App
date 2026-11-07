@@ -151,7 +151,7 @@ class _StaffDashboardScreenState extends State<StaffDashboardScreen> {
                         children: <Widget>[
                           Flexible(
                             child: Text(
-                              'Hello, $firstName 👋',
+                              'Hello, $firstName',
                               maxLines: 1,
                               overflow: TextOverflow.ellipsis,
                               style: const TextStyle(
